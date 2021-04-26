@@ -26,7 +26,7 @@ public class SimpleBlockPredicateListArgumentType extends ListArgumentType<Predi
     }
 
     @SuppressWarnings("unchecked")
-    public static List<Predicate<Block>> getList(final CommandContext<?> context, final String name) {
+    public static List<Predicate<Block>> getBlockPredicateList(final CommandContext<?> context, final String name) {
         return (List<Predicate<Block>>) context.getArgument(name, List.class);
     }
 }
