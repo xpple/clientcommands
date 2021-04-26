@@ -22,9 +22,8 @@ import java.util.stream.StreamSupport;
 
 import static net.earthcomputer.clientcommands.command.ClientCommandManager.addClientSideCommand;
 import static net.earthcomputer.clientcommands.command.ClientCommandManager.sendFeedback;
-import static net.earthcomputer.clientcommands.command.arguments.ListArgumentType.getList;
-import static net.earthcomputer.clientcommands.command.arguments.ListArgumentType.list;
-import static net.earthcomputer.clientcommands.command.arguments.SimpleBlockPredicateArgumentType.blockPredicate;
+import static net.earthcomputer.clientcommands.command.arguments.list.SimpleBlockPredicateListArgumentType.blockPredicateList;
+import static net.earthcomputer.clientcommands.command.arguments.list.SimpleBlockPredicateListArgumentType.getList;
 import static net.minecraft.command.argument.BlockPosArgumentType.blockPos;
 import static net.minecraft.command.argument.BlockPosArgumentType.getBlockPos;
 import static net.minecraft.server.command.CommandManager.argument;
@@ -41,7 +40,7 @@ public class AreaStatsCommand {
         dispatcher.register(literal("careastats")
                 .then(argument("pos1", blockPos())
                         .then(argument("pos2", blockPos())
-                                .then(argument("predicates", list(blockPredicate(), 1))
+                                .then(argument("predicates", blockPredicateList(1))
                                         .executes(ctx -> areaStats(ctx.getSource(), getBlockPos(ctx, "pos1"), getBlockPos(ctx, "pos2"), getList(ctx, "predicates"))))
                                 .executes(ctx -> areaStats(ctx.getSource(), getBlockPos(ctx, "pos1"), getBlockPos(ctx, "pos2"), block -> !block.getDefaultState().isAir())))));
     }

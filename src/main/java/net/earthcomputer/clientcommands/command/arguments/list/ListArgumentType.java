@@ -1,4 +1,4 @@
-package net.earthcomputer.clientcommands.command.arguments;
+package net.earthcomputer.clientcommands.command.arguments.list;
 
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.ArgumentType;
@@ -14,35 +14,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class ListArgumentType<T, U extends ArgumentType<T>> implements ArgumentType<List<T>> {
+class ListArgumentType<T> implements ArgumentType<List<T>> {
 
     private static final SimpleCommandExceptionType TOO_FEW_ARGUMENTS_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.client.tooFewArguments"));
 
-    private final U argumentType;
+    private final ArgumentType<T> argumentType;
     private final int min;
     private final int max;
 
-    private ListArgumentType(U argumentType, int min, int max) {
+    protected ListArgumentType(ArgumentType<T> argumentType, int min, int max) {
         this.argumentType = argumentType;
         this.min = min;
         this.max = max;
-    }
-
-    public static <T, U extends ArgumentType<T>> ListArgumentType<T, U> list(U argumentType) {
-        return new ListArgumentType<>(argumentType, 1, Integer.MAX_VALUE);
-    }
-
-    public static <T, U extends ArgumentType<T>> ListArgumentType<T, U> list(U argumentType, int min) {
-        return new ListArgumentType<>(argumentType, min, Integer.MAX_VALUE);
-    }
-
-    public static <T, U extends ArgumentType<T>> ListArgumentType<T, U> list(U argumentType, int min, int max) {
-        return new ListArgumentType<>(argumentType, min, max);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> List<T> getList(final CommandContext<?> context, final String name) {
-        return (List<T>) context.getArgument(name, List.class);
     }
 
     /**
