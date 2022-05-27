@@ -1,19 +1,17 @@
 package net.earthcomputer.clientcommands.mixin;
 
-import com.mojang.brigadier.CommandDispatcher;
 import net.cortex.clientAddon.cracker.SeedCracker;
 import net.earthcomputer.clientcommands.ServerBrandManager;
 import net.earthcomputer.clientcommands.TempRules;
+import net.earthcomputer.clientcommands.TntFinderManager;
 import net.earthcomputer.clientcommands.features.FishingCracker;
 import net.earthcomputer.clientcommands.features.Relogger;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.command.CommandSource;
 import net.minecraft.entity.EntityType;
-import net.minecraft.network.packet.s2c.play.CustomPayloadS2CPacket;
-import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
-import net.minecraft.network.packet.s2c.play.ExperienceOrbSpawnS2CPacket;
+import net.minecraft.network.packet.s2c.play.*;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,11 +20,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import static net.earthcomputer.clientcommands.command.ClientCommandHelper.*;
+
 @Mixin(ClientPlayNetworkHandler.class)
 public class MixinClientPlayNetworkHandler {
-
-    @Shadow
-    private CommandDispatcher<CommandSource> commandDispatcher;
 
     @Shadow @Final private MinecraftClient client;
 
@@ -88,4 +85,32 @@ public class MixinClientPlayNetworkHandler {
         }
     }
 
+    @Inject(method = "onExplosion", at = @At("TAIL"))
+    private void onExplosion(ExplosionS2CPacket packet, CallbackInfo ci) {
+        if (!TempRules.getTntFinder()) {
+            return;
+        }
+        final float velX = packet.getPlayerVelocityX();
+        final float velZ = packet.getPlayerVelocityZ();
+        if (velX != 0.0 || velZ != 0.0) {
+            sendError(new TranslatableText("tntFinder.explosionInterferenceWarning"));
+        }
+    }
+
+    @Inject(method = "onEntityVelocityUpdate", at = @At("TAIL"))
+    private void onEntityVelocityUpdate(EntityVelocityUpdateS2CPacket packet, CallbackInfo ci) {
+        if (!TempRules.getTntFinder()) {
+            return;
+        }
+        if (packet.getId() == this.client.player.getId()) {
+            boolean isReady = TntFinderManager.set(new Vec3d(this.client.player.getX(), 0, this.client.player.getZ()), new Vec3d(packet.getVelocityX(), 0, packet.getVelocityZ()));
+            if (isReady) {
+                Vec3d loc = TntFinderManager.triangulate();
+                if (loc.y == -1184951860) {
+                    sendError(new TranslatableText("tntFinder.parallelVectorsWarning"));
+                }
+                sendFeedback(new TranslatableText("tntFinder.triangulatedLocation", loc.x, loc.z));
+            }
+        }
+    }
 }
