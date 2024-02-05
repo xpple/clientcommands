@@ -15,6 +15,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
@@ -29,7 +30,7 @@ public class FindBlockCommand {
         dispatcher.register(literal("cfindblock")
             .then(argument("block", withString(blockPredicate(registryAccess)))
                 .executes(ctx -> {
-                    var blockWithString = getWithString(ctx, "block", ClientBlockPredicateArgumentType.ParseResult.class);
+                    Pair<String, ClientBlockPredicateArgumentType.ParseResult> blockWithString = getWithString(ctx, "block");
                     return findBlock(Text.translatable("commands.cfindblock.starting", blockWithString.getLeft()), getBlockPredicate(blockWithString.getRight()));
                 })));
     }

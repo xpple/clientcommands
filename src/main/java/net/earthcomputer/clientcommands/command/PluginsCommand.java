@@ -71,9 +71,9 @@ public class PluginsCommand {
         awaitingSuggestionsPacket = false;
         callback.apply(packet);
     }
-}
 
-@FunctionalInterface
-interface SuggestionsCallback {
-    void apply(CommandSuggestionsS2CPacket packet);
+    @FunctionalInterface
+    private interface SuggestionsCallback {
+        void apply(CommandSuggestionsS2CPacket packet);
+    }
 }

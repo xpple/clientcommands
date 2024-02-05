@@ -48,7 +48,7 @@ public class FishCommand {
                     .executes(ctx -> addGoal(ctx.getSource(), getClientItemPredicate(ctx, "goal")))))
             .then(literal("add-enchanted-goal")
                 .then(argument("goal", withString(itemAndEnchantmentsPredicate().withItemPredicate(ENCHANTABLE_ITEMS::contains).withEnchantmentPredicate((item, ench) -> ench.isAvailableForRandomSelection()).constrainMaxLevel()))
-                    .executes(ctx -> addEnchantedGoal(ctx.getSource(), getWithString(ctx, "goal", ItemAndEnchantmentsPredicate.class)))))
+                    .executes(ctx -> addEnchantedGoal(ctx.getSource(), getWithString(ctx, "goal")))))
             .then(literal("remove-goal")
                 .then(argument("index", integer(1))
                     .executes(ctx -> removeGoal(ctx.getSource(), getInteger(ctx, "index"))))));

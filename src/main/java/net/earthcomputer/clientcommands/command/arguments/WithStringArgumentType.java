@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class WithStringArgumentType<T> implements ArgumentType<Pair<String, T>> {
 
-    private ArgumentType<T> delegate;
+    private final ArgumentType<T> delegate;
 
     private WithStringArgumentType(ArgumentType<T> delegate) {
         this.delegate = delegate;
@@ -24,7 +24,7 @@ public class WithStringArgumentType<T> implements ArgumentType<Pair<String, T>> 
     }
 
     @SuppressWarnings("unchecked")
-    public static <S, T> Pair<String, T> getWithString(CommandContext<S> context, String arg, Class<T> type) {
+    public static <S, T> Pair<String, T> getWithString(CommandContext<S> context, String arg) {
         return context.getArgument(arg, Pair.class);
     }
 
