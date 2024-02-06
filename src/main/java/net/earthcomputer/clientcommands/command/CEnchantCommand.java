@@ -31,7 +31,7 @@ public class CEnchantCommand {
     }
 
     private static boolean enchantmentPredicate(Item item, Enchantment ench) {
-        return !ench.isTreasure() && ench.isAvailableForRandomSelection() && (item == Items.BOOK || ench.target.isAcceptableItem(item));
+        return !ench.isTreasure() && ench.isAvailableForRandomSelection() && (item == Items.BOOK || item.getRegistryEntry().isIn(ench.getApplicableItems()));
     }
 
     private static int cenchant(FabricClientCommandSource source, ItemAndEnchantmentsPredicate itemAndEnchantmentsPredicate) {

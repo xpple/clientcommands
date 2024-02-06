@@ -16,19 +16,21 @@ import com.mojang.util.InstantTypeAdapter;
 import com.mojang.util.UUIDTypeAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.EncoderException;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.item.ItemStack;
+import net.earthcomputer.clientcommands.mixin.ClientConnectionAccessor;
+import net.earthcomputer.clientcommands.mixin.DecoderHandlerAccessor;
+import net.earthcomputer.clientcommands.mixin.EncoderHandlerAccessor;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketEncoder;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
-import net.minecraft.util.collection.IndexedIterable;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.*;
 import org.apache.commons.io.function.IOBiConsumer;
@@ -60,7 +62,13 @@ public class PacketDumper {
     public static void dumpPacket(Packet<?> packet, JsonWriter writer) throws IOException {
         writer.beginArray();
         try {
-            packet.write(new PacketDumpByteBuf(writer));
+            ChannelPipeline pipeline = ((ClientConnectionAccessor) MinecraftClient.getInstance().getNetworkHandler().getConnection()).getChannel().pipeline();
+            @SuppressWarnings("unchecked")
+            PacketCodec<ByteBuf, Packet<?>> codec = switch (packet.getPacketId().side()) {
+                case CLIENTBOUND -> (PacketCodec<ByteBuf, Packet<?>>) ((DecoderHandlerAccessor<?>) pipeline.get("decoder")).getState().codec();
+                case SERVERBOUND -> (PacketCodec<ByteBuf, Packet<?>>) ((EncoderHandlerAccessor<?>) pipeline.get("encoder")).getState().codec();
+            };
+            codec.encode(new PacketDumpByteBuf(writer), packet);
         } catch (UncheckedIOException e) {
             throw e.getCause();
         }
@@ -117,39 +125,12 @@ public class PacketDumper {
         }
 
         @Override
-        public <T> void writeRegistryValue(IndexedIterable<T> indexedIterable, T value) {
-            dump("id", () -> {
-                dumpValueClass(value);
-                writer.name("value").value(Objects.toString(value));
-                if (indexedIterable instanceof Registry<T> registry) {
-                    writer.name("registry").value(registry.getKey().getValue().toString());
-                    writer.name("valueKey").value(Objects.toString(registry.getId(value)));
-                }
-                writer.name("id").value(indexedIterable.getRawId(value));
-            });
-        }
-
-        @Override
-        public <T> void writeRegistryEntry(IndexedIterable<RegistryEntry<T>> idMap, RegistryEntry<T> value, PacketWriter<T> directWriter) {
-            dump("idHolder", () -> {
-                writer.name("kind").value(value.getType().name());
-                value.getKeyOrValue().ifLeft(key -> Uncheck.run(() -> {
-                    writer.name("referenceKey").value(key.getValue().toString());
-                    writer.name("id").value(idMap.getRawId(value));
-                })).ifRight(directValue -> Uncheck.run(() -> {
-                    writer.name("directValue");
-                    dumpValue(directValue, directWriter);
-                }));
-            });
-        }
-
-        @Override
-        public <T> void writeCollection(Collection<T> collection, PacketWriter<T> elementWriter) {
+        public <T> void writeCollection(Collection<T> collection, PacketEncoder<? super PacketByteBuf, T> encoder) {
             dump("collection", () -> {
                 writer.name("size").value(collection.size());
                 writer.name("elements").beginArray();
                 for (T element : collection) {
-                    dumpValue(element, elementWriter);
+                    dumpValue(element, encoder);
                 }
                 writer.endArray();
             });
@@ -168,16 +149,16 @@ public class PacketDumper {
         }
 
         @Override
-        public <K, V> void writeMap(Map<K, V> map, PacketWriter<K> keyWriter, PacketWriter<V> valueWriter) {
+        public <K, V> void writeMap(Map<K, V> map, PacketEncoder<? super PacketByteBuf, K> keyEncoder, PacketEncoder<? super PacketByteBuf, V> valueEncoder) {
             dump("map", () -> {
                 writer.name("size").value(map.size());
                 writer.name("elements").beginArray();
                 for (var entry : map.entrySet()) {
                     writer.beginObject();
                     writer.name("key");
-                    dumpValue(entry.getKey(), keyWriter);
+                    dumpValue(entry.getKey(), keyEncoder);
                     writer.name("value");
-                    dumpValue(entry.getValue(), valueWriter);
+                    dumpValue(entry.getValue(), valueEncoder);
                     writer.endObject();
                 }
                 writer.endArray();
@@ -198,22 +179,22 @@ public class PacketDumper {
         }
 
         @Override
-        public <T> void writeOptional(Optional<T> optional, PacketWriter<T> valueWriter) {
-            writeNullable("optional", optional.orElse(null), valueWriter);
+        public <T> void writeOptional(Optional<T> optional, PacketEncoder<? super PacketByteBuf, T> valueEncoder) {
+            writeNullable("optional", optional.orElse(null), valueEncoder);
         }
 
         @Override
-        public <T> void writeNullable(@Nullable T value, PacketWriter<T> writer) {
-            writeNullable("nullable", value, writer);
+        public <T> void writeNullable(@Nullable T value, PacketEncoder<? super PacketByteBuf, T> encoder) {
+            writeNullable("nullable", value, encoder);
         }
 
-        private <T> void writeNullable(String type, T value, PacketWriter<T> valueWriter) {
+        private <T> void writeNullable(String type, T value, PacketEncoder<? super PacketByteBuf, T> valueEncoder) {
             dump(type, () -> {
                 writer.name("present");
                 if (value != null) {
                     writer.value(true);
                     writer.name("value");
-                    dumpValue(value, valueWriter);
+                    dumpValue(value, valueEncoder);
                 } else {
                     writer.value(false);
                 }
@@ -221,17 +202,17 @@ public class PacketDumper {
         }
 
         @Override
-        public <L, R> void writeEither(Either<L, R> value, PacketWriter<L> leftWriter, PacketWriter<R> rightWriter) {
+        public <L, R> void writeEither(Either<L, R> value, PacketEncoder<? super PacketByteBuf, L> leftEncoder, PacketEncoder<? super PacketByteBuf, R> rightEncoder) {
             dump("either", () -> {
                 writer.name("either");
                 value.ifLeft(left -> Uncheck.run(() -> {
                     writer.value("left");
                     writer.name("value");
-                    dumpValue(left, leftWriter);
+                    dumpValue(left, leftEncoder);
                 })).ifRight(right -> Uncheck.run(() -> {
                     writer.value("right");
                     writer.name("value");
-                    dumpValue(right, rightWriter);
+                    dumpValue(right, rightEncoder);
                 }));
             });
         }
@@ -297,10 +278,10 @@ public class PacketDumper {
         @Override
         public void writeGlobalPos(GlobalPos pos) {
             dump("globalPos", () -> writer
-                .name("level").value(pos.getDimension().getValue().toString())
-                .name("x").value(pos.getPos().getX())
-                .name("y").value(pos.getPos().getY())
-                .name("z").value(pos.getPos().getZ())
+                .name("level").value(pos.dimension().getValue().toString())
+                .name("x").value(pos.pos().getX())
+                .name("y").value(pos.pos().getY())
+                .name("z").value(pos.pos().getZ())
             );
         }
 
@@ -330,14 +311,6 @@ public class PacketDumper {
                 .name("y").value(vec3.y)
                 .name("z").value(vec3.z)
             );
-        }
-
-        @Override
-        public PacketDumpByteBuf writeText(Text text) {
-            return dump("component", () -> {
-                writer.name("value");
-                GSON.toJson(Text.Serialization.toJsonTree(text), writer);
-            });
         }
 
         @Override
@@ -375,15 +348,6 @@ public class PacketDumper {
         @Override
         public PacketDumpByteBuf writeNbt(@Nullable NbtElement NbtElement) {
             return dumpAsString("nbt", NbtElement);
-        }
-
-        @Override
-        public PacketDumpByteBuf writeItemStack(ItemStack stack) {
-            return dump("item", () -> writer
-                .name("item").value(stack.getRegistryEntry().getKey().map(k -> k.getValue().toString()).orElse(null))
-                .name("count").value(stack.getCount())
-                .name("tag").value(Objects.toString(stack.getNbt()))
-            );
         }
 
         @Override
@@ -668,11 +632,11 @@ public class PacketDumper {
             }
         }
 
-        private <T> void dumpValue(T value, PacketWriter<T> valueWriter) throws IOException {
+        private <T> void dumpValue(T value, PacketEncoder<? super PacketByteBuf, T> encoder) throws IOException {
             writer.beginObject();
             dumpValueClass(value);
             writer.name("fields").beginArray();
-            valueWriter.accept(this, value);
+            encoder.encode(this, value);
             writer.endArray();
             writer.endObject();
         }

@@ -1014,16 +1014,16 @@ public class FishingCracker {
             int j;
             double k;
             double l;
-            for(j = 0; (float)j < 1.0F + FISHING_BOBBER_DIMENSIONS.width * 20.0F; ++j) {
-                k = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width;
-                l = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width;
+            for(j = 0; (float)j < 1.0F + FISHING_BOBBER_DIMENSIONS.width() * 20.0F; ++j) {
+                k = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width();
+                l = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width();
                 random.nextDouble();
                 //this.world.addParticle(ParticleTypes.BUBBLE, this.pos.x + k, (double)(h + 1.0F), this.pos.z + l, vec3d.x, vec3d.y - this.random.nextDouble() * 0.20000000298023224D, vec3d.z);
             }
 
-            for(j = 0; (float)j < 1.0F + FISHING_BOBBER_DIMENSIONS.width * 20.0F; ++j) {
-                k = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width;
-                l = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width;
+            for(j = 0; (float)j < 1.0F + FISHING_BOBBER_DIMENSIONS.width() * 20.0F; ++j) {
+                k = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width();
+                l = (this.random.nextDouble() * 2.0D - 1.0D) * (double)FISHING_BOBBER_DIMENSIONS.width();
                 //this.world.addParticle(ParticleTypes.SPLASH, this.getX() + k, (double)(h + 1.0F), this.getZ() + l, vec3d.x, vec3d.y, vec3d.z);
             }
         }

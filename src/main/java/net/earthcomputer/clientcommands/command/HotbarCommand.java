@@ -13,6 +13,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 
+import java.util.List;
+
 import static com.mojang.brigadier.arguments.IntegerArgumentType.*;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.*;
 
@@ -37,9 +39,7 @@ public class HotbarCommand {
         HotbarStorage storage = client.getCreativeHotbarStorage();
         HotbarStorageEntry entry = storage.getSavedHotbar(index - 1);
 
-        for (int slot = 0; slot < PlayerInventory.getHotbarSize(); slot++) {
-            entry.set(slot, source.getPlayer().getInventory().getStack(slot).copy());
-        }
+        entry.serialize(source.getPlayer().getInventory(), source.getRegistryManager());
         storage.save();
 
         Text loadKey = client.options.loadToolbarActivatorKey.getBoundKeyLocalizedText();
@@ -60,8 +60,9 @@ public class HotbarCommand {
         HotbarStorage storage = client.getCreativeHotbarStorage();
         HotbarStorageEntry entry = storage.getSavedHotbar(index - 1);
 
+        List<ItemStack> stacks = entry.deserialize(source.getRegistryManager());
         for (int slot = 0; slot < PlayerInventory.getHotbarSize(); slot++) {
-            ItemStack stack = entry.get(slot).copy();
+            ItemStack stack = stacks.get(slot);
 
             player.getInventory().setStack(slot, stack);
             client.interactionManager.clickCreativeStack(stack, 36 + slot);

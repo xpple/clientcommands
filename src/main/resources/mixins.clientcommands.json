@@ -5,6 +5,9 @@
   "mixins": [
     "ChatInputSuggestorAccessor",
     "CheckedRandomAccessor",
+    "ClientConnectionAccessor",
+    "DecoderHandlerAccessor",
+    "EncoderHandlerAccessor",
     "HoverEventActionAccessor",
     "InGameHudAccessor",
     "LandPathNodeMakerAccessor",

@@ -21,7 +21,6 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.ScreenHandlerProvider;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.entity.Entity;
@@ -39,11 +38,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
@@ -174,8 +169,6 @@ public class FindItemCommand {
             assert world != null;
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
             assert player != null;
-            ClientPlayerInteractionManager interactionManager = MinecraftClient.getInstance().interactionManager;
-            assert interactionManager != null;
             if (currentlySearchingTimeout > 0) {
                 currentlySearchingTimeout--;
                 return;
@@ -184,7 +177,8 @@ public class FindItemCommand {
                 return;
             }
             Vec3d origin = entity.getCameraPosVec(0);
-            float reachDistance = interactionManager.getReachDistance();
+
+            double reachDistance = player.getBlockInteractionRange();
             int minX = MathHelper.floor(origin.x - reachDistance);
             int minY = MathHelper.floor(origin.y - reachDistance);
             int minZ = MathHelper.floor(origin.z - reachDistance);

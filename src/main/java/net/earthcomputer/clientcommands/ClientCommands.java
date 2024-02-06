@@ -5,7 +5,6 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.logging.LogUtils;
 import dev.xpple.betterconfig.api.ModConfigBuilder;
-import io.netty.buffer.Unpooled;
 import net.earthcomputer.clientcommands.command.*;
 import net.earthcomputer.clientcommands.render.RenderQueue;
 import net.fabricmc.api.ClientModInitializer;
@@ -13,11 +12,11 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.MinecraftVersion;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.Vec3d;
@@ -76,6 +75,8 @@ public class ClientCommands implements ClientModInitializer {
             context.matrixStack().pop();
         });
 
+        PayloadTypeRegistry.playC2S().register(CommandExecutionCustomPayload.ID, CommandExecutionCustomPayload.CODEC);
+
         configDir = FabricLoader.getInstance().getConfigDir().resolve("clientcommands");
         try {
             Files.createDirectories(configDir);
@@ -100,9 +101,7 @@ public class ClientCommands implements ClientModInitializer {
         String theCommand = reader.readUnquotedString();
         if (clientcommandsCommands.contains(theCommand) && !COMMANDS_TO_NOT_SEND_TO_SERVER.contains(theCommand)) {
             if (ClientPlayNetworking.canSend(COMMAND_EXECUTION_PACKET_ID)) {
-                PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
-                buf.writeString(command);
-                ClientPlayNetworking.send(COMMAND_EXECUTION_PACKET_ID, buf);
+                ClientPlayNetworking.send(new CommandExecutionCustomPayload(command));
             }
         }
     }

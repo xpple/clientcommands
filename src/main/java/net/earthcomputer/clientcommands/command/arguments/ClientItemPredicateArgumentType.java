@@ -16,8 +16,6 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
 
@@ -29,10 +27,10 @@ import java.util.function.Predicate;
 
 public class ClientItemPredicateArgumentType implements ArgumentType<ClientItemPredicateArgumentType.ClientItemPredicate> {
 
-    private final RegistryWrapper<Item> registryWrapper;
+    private final CommandRegistryAccess registryAccess;
 
     private ClientItemPredicateArgumentType(CommandRegistryAccess registryAccess) {
-        registryWrapper = registryAccess.createWrapper(RegistryKeys.ITEM);
+        this.registryAccess = registryAccess;
     }
 
     /**
@@ -53,17 +51,13 @@ public class ClientItemPredicateArgumentType implements ArgumentType<ClientItemP
 
     @Override
     public ClientItemPredicate parse(StringReader reader) throws CommandSyntaxException {
-        int start = reader.getCursor();
-        var result = ItemStringReader.itemOrTag(registryWrapper, reader);
-        return result.map(
-                itemResult -> new ItemPredicate(itemResult.item(), itemResult.nbt()),
-                tagResult -> new TagPredicate(reader.getString().substring(start, reader.getCursor()), tagResult.tag(), tagResult.nbt())
-        );
+        var result = new ItemStringReader(registryAccess).consume(reader);
+        return new ItemPredicate(result.item(), result.nbt());
     }
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
-        return ItemStringReader.getSuggestions(registryWrapper, builder, true);
+        return new ItemStringReader(registryAccess).getSuggestions(builder);
     }
 
     public sealed interface ClientItemPredicate extends Predicate<ItemStack> {
