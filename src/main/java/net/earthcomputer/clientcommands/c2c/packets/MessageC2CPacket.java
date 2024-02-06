@@ -1,40 +1,33 @@
 package net.earthcomputer.clientcommands.c2c.packets;
 
-import net.earthcomputer.clientcommands.c2c.C2CPacket;
-import net.earthcomputer.clientcommands.c2c.CCPacketListener;
-import net.minecraft.network.PacketByteBuf;
+import net.earthcomputer.clientcommands.c2c.C2CPacketListener;
+import net.minecraft.network.NetworkSide;
+import net.minecraft.network.RegistryByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.PacketType;
+import net.minecraft.util.Identifier;
 
-public class MessageC2CPacket implements C2CPacket {
+public record MessageC2CPacket(String sender, String message) implements Packet<C2CPacketListener> {
+    public static final PacketCodec<RegistryByteBuf, MessageC2CPacket> CODEC = Packet.createCodec(MessageC2CPacket::write, MessageC2CPacket::new);
+    public static final PacketType<MessageC2CPacket> ID = new PacketType<>(NetworkSide.CLIENTBOUND, new Identifier("clientcommands", "message"));
 
-    private final String sender;
-    private final String message;
-
-    public MessageC2CPacket(String sender, String message) {
-        this.sender = sender;
-        this.message = message;
+    private MessageC2CPacket(RegistryByteBuf buf) {
+        this(buf.readString(), buf.readString());
     }
 
-    public MessageC2CPacket(PacketByteBuf raw) {
-        this.sender = raw.readString();
-        this.message = raw.readString();
-    }
-
-    @Override
-    public void write(PacketByteBuf buf) {
+    private void write(RegistryByteBuf buf) {
         buf.writeString(this.sender);
         buf.writeString(this.message);
     }
 
     @Override
-    public void apply(CCPacketListener listener) {
+    public void apply(C2CPacketListener listener) {
         listener.onMessageC2CPacket(this);
     }
 
-    public String getSender() {
-        return this.sender;
-    }
-
-    public String getMessage() {
-        return this.message;
+    @Override
+    public PacketType<? extends Packet<C2CPacketListener>> getPacketId() {
+        return ID;
     }
 }

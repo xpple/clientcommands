@@ -174,8 +174,6 @@ public class FindItemCommand {
             assert world != null;
             ClientPlayerEntity player = MinecraftClient.getInstance().player;
             assert player != null;
-            ClientPlayerInteractionManager interactionManager = MinecraftClient.getInstance().interactionManager;
-            assert interactionManager != null;
             if (currentlySearchingTimeout > 0) {
                 currentlySearchingTimeout--;
                 return;
@@ -184,7 +182,7 @@ public class FindItemCommand {
                 return;
             }
             Vec3d origin = entity.getCameraPosVec(0);
-            float reachDistance = interactionManager.getReachDistance();
+            double reachDistance = player.getBlockInteractionRange();
             int minX = MathHelper.floor(origin.x - reachDistance);
             int minY = MathHelper.floor(origin.y - reachDistance);
             int minZ = MathHelper.floor(origin.z - reachDistance);

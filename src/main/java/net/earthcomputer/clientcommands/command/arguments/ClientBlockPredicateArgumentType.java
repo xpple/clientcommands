@@ -38,7 +38,7 @@ public class ClientBlockPredicateArgumentType implements ArgumentType<ClientBloc
     private boolean allowTags = true;
 
     private ClientBlockPredicateArgumentType(CommandRegistryAccess registryAccess) {
-        registryWrapper = registryAccess.createWrapper(RegistryKeys.BLOCK);
+        registryWrapper = registryAccess.getWrapperOrThrow(RegistryKeys.BLOCK);
     }
 
     public static ClientBlockPredicateArgumentType blockPredicate(CommandRegistryAccess registryAccess) {
@@ -67,10 +67,10 @@ public class ClientBlockPredicateArgumentType implements ArgumentType<ClientBloc
     }
 
     public static ClientBlockPredicate getBlockPredicate(CommandContext<FabricClientCommandSource> context, String arg) throws CommandSyntaxException {
-        return getBlockPredicate(context.getArgument(arg, ParseResult.class));
+        return getBlockPredicate(context.getArgument(arg, ParseResult.class), context);
     }
 
-    public static ClientBlockPredicate getBlockPredicate(ParseResult result) throws CommandSyntaxException {
+    public static ClientBlockPredicate getBlockPredicate(ParseResult result, CommandContext<FabricClientCommandSource> context) throws CommandSyntaxException {
         Predicate<BlockState> predicate = getPredicateForListWithoutNbt(Collections.singletonList(result.result));
         NbtCompound nbtData = result.result.map(BlockArgumentParser.BlockResult::nbt, BlockArgumentParser.TagResult::nbt);
         if (nbtData == null) {
@@ -84,7 +84,7 @@ public class ClientBlockPredicateArgumentType implements ArgumentType<ClientBloc
                     return false;
                 }
                 BlockEntity be = blockView.getBlockEntity(pos);
-                return be != null && NbtHelper.matches(nbtData, be.createNbt(), true);
+                return be != null && NbtHelper.matches(nbtData, be.createNbt(context.getSource().getRegistryManager()), true);
             }
 
             @Override
@@ -136,7 +136,7 @@ public class ClientBlockPredicateArgumentType implements ArgumentType<ClientBloc
                                 // from this point we would always require a block entity
                                 return false;
                             }
-                            actualNbt = be.createNbt();
+                            actualNbt = be.createNbt(context.getSource().getRegistryManager());
                         }
                         if (NbtHelper.matches(nbt, actualNbt, true)) {
                             return true;

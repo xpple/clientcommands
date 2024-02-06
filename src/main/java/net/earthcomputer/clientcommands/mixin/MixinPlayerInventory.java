@@ -26,7 +26,7 @@ public class MixinPlayerInventory {
             for (ItemStack item : main) {
                 if (item.isEmpty()) {
                     stackSize -= stack.getMaxCount();
-                } else if (ItemStack.canCombine(item, stack)) {
+                } else if (ItemStack.areItemsAndNbtEqual(item, stack)) {
                     stackSize -= stack.getMaxCount() - item.getCount();
                 }
             }

@@ -5,7 +5,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import net.earthcomputer.clientcommands.c2c.CCNetworkHandler;
+import net.earthcomputer.clientcommands.c2c.C2CPacketHandler;
 import net.earthcomputer.clientcommands.c2c.packets.MessageC2CPacket;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.network.PlayerListEntry;
@@ -41,7 +41,7 @@ public class WhisperEncryptedCommand {
                 .orElseThrow(PLAYER_NOT_FOUND_EXCEPTION::create);
 
         MessageC2CPacket packet = new MessageC2CPacket(source.getClient().getNetworkHandler().getProfile().getName(), message);
-        CCNetworkHandler.getInstance().sendPacket(packet, recipient);
+        C2CPacketHandler.getInstance().sendPacket(packet, recipient);
         MutableText prefix = Text.empty();
         prefix.append(Text.literal("[").formatted(Formatting.DARK_GRAY));
         prefix.append(Text.literal("/cwe").formatted(Formatting.AQUA));

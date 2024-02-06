@@ -3,44 +3,35 @@ package net.earthcomputer.clientcommands.c2c;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import com.mojang.logging.LogUtils;
 import net.earthcomputer.clientcommands.c2c.packets.MessageC2CPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.*;
 import net.minecraft.network.encryption.PlayerPublicKey;
 import net.minecraft.network.encryption.PublicPlayerSession;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import org.slf4j.Logger;
 
 import java.security.PublicKey;
 
-public class CCNetworkHandler implements CCPacketListener {
-
+public class C2CPacketHandler implements C2CPacketListener {
     private static final DynamicCommandExceptionType MESSAGE_TOO_LONG_EXCEPTION = new DynamicCommandExceptionType(d -> Text.translatable("ccpacket.messageTooLong", d));
     private static final SimpleCommandExceptionType PUBLIC_KEY_NOT_FOUND_EXCEPTION = new SimpleCommandExceptionType(Text.translatable("ccpacket.publicKeyNotFound"));
     private static final SimpleCommandExceptionType ENCRYPTION_FAILED_EXCEPTION = new SimpleCommandExceptionType(Text.translatable("ccpacket.encryptionFailed"));
 
-    private static final CCNetworkHandler instance = new CCNetworkHandler();
+    public static final NetworkState.Factory<C2CPacketListener, RegistryByteBuf> C2C = NetworkStateBuilder.buildFactory(NetworkPhase.PLAY, NetworkSide.CLIENTBOUND, builder -> builder.add(MessageC2CPacket.ID, MessageC2CPacket.CODEC));
+    public static final NetworkState<C2CPacketListener> STATE = C2C.bind(RegistryByteBuf.makeFactory(MinecraftClient.getInstance().getNetworkHandler().getRegistryManager()));
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final C2CPacketHandler instance = new C2CPacketHandler();
 
-    private CCNetworkHandler() {
-    }
-
-    public static CCNetworkHandler getInstance() {
+    public static C2CPacketHandler getInstance() {
         return instance;
     }
 
-    public void sendPacket(C2CPacket packet, PlayerListEntry recipient) throws CommandSyntaxException {
-        Integer id = CCPacketHandler.getId(packet.getClass());
-        if (id == null) {
-            LOGGER.warn("Could not send the packet because the id was not recognised");
-            return;
-        }
+    public static void sendPacket(Packet<C2CPacketListener> packet, PlayerListEntry recipient) throws CommandSyntaxException {
         PublicPlayerSession session = recipient.getSession();
         if (session == null) {
             throw PUBLIC_KEY_NOT_FOUND_EXCEPTION.create();
@@ -51,8 +42,7 @@ public class CCNetworkHandler implements CCPacketListener {
         }
         PublicKey key = ppk.data().key();
         PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeInt(id);
-        packet.write(buf);
+        STATE.codec().encode(buf, packet);
         byte[] uncompressed = new byte[buf.readableBytes()];
         buf.getBytes(0, uncompressed);
         byte[] compressed = ConversionHelper.Gzip.compress(uncompressed);
@@ -89,8 +79,8 @@ public class CCNetworkHandler implements CCPacketListener {
 
     @Override
     public void onMessageC2CPacket(MessageC2CPacket packet) {
-        String sender = packet.getSender();
-        String message = packet.getMessage();
+        String sender = packet.sender();
+        String message = packet.message();
         MutableText prefix = Text.empty();
         prefix.append(Text.literal("[").formatted(Formatting.DARK_GRAY));
         prefix.append(Text.literal("/cwe").formatted(Formatting.AQUA));
@@ -98,5 +88,24 @@ public class CCNetworkHandler implements CCPacketListener {
         prefix.append(Text.literal(" "));
         Text text = prefix.append(Text.translatable("ccpacket.messageC2CPacket.incoming", sender, message).formatted(Formatting.GRAY));
         MinecraftClient.getInstance().inGameHud.getChatHud().addMessage(text);
+    }
+
+    @Override
+    public NetworkSide getSide() {
+        return STATE.side();
+    }
+
+    @Override
+    public NetworkPhase getPhase() {
+        return STATE.id();
+    }
+
+    @Override
+    public void onDisconnected(Text reason) {
+    }
+
+    @Override
+    public boolean isConnectionOpen() {
+        return true;
     }
 }

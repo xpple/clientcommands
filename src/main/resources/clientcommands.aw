@@ -12,3 +12,5 @@ accessible method net/minecraft/client/MinecraftClient openChatScreen (Ljava/lan
 
 accessible method net/minecraft/text/HoverEvent <init> (Lnet/minecraft/text/HoverEvent$EventData;)V
 accessible class net/minecraft/text/HoverEvent$EventData
+
+accessible method net/minecraft/network/NetworkStateBuilder buildFactory (Lnet/minecraft/network/NetworkPhase;Lnet/minecraft/network/NetworkSide;Ljava/util/function/Consumer;)Lnet/minecraft/network/NetworkState$Factory;

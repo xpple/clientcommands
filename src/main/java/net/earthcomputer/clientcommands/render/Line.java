@@ -39,7 +39,7 @@ public class Line extends Shape {
                 (color & 0xFF) / 255.0F,
                 1.0F
         ).normal(
-                matrixStack.peek().getNormalMatrix(),
+                matrixStack.peek(),
                 (float) normal.getX(),
                 (float) normal.getY(),
                 (float) normal.getZ()

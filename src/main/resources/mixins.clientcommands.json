@@ -16,6 +16,7 @@
     "MixinCartographyTableContainer",
     "MixinChatHud",
     "MixinChatScreen",
+    "MixinClientArguments",
     "MixinClientCommandSource",
     "MixinClientPlayerEntity",
     "MixinClientPlayerInteractionManager",

@@ -8,7 +8,9 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatHud;
 import net.minecraft.client.gui.hud.MessageIndicator;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.handler.DecoderHandler;
 import net.minecraft.network.message.MessageSignatureData;
+import net.minecraft.network.packet.Packet;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -98,16 +100,13 @@ public class MixinChatHud {
         }
         byte[] uncompressed = ConversionHelper.Gzip.uncompress(decrypted);
         PacketByteBuf buf = new PacketByteBuf(Unpooled.wrappedBuffer(uncompressed));
-        int id = buf.readInt();
-        C2CPacket c2CPacket = CCPacketHandler.createPacket(id, buf);
-        if (c2CPacket == null) {
-            return false;
-        }
+
+        Packet<? super C2CPacketListener> packet = C2CPacketHandler.STATE.codec().decode(buf);
         if (buf.readableBytes() > 0) {
             return false;
         }
         try {
-            c2CPacket.apply(CCNetworkHandler.getInstance());
+            packet.apply(C2CPacketHandler.getInstance());
         } catch (Exception e) {
             MinecraftClient.getInstance().inGameHud.getChatHud().addMessage(Text.of(e.getMessage()));
             e.printStackTrace();

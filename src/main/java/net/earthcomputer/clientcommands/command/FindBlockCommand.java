@@ -30,7 +30,7 @@ public class FindBlockCommand {
             .then(argument("block", withString(blockPredicate(registryAccess)))
                 .executes(ctx -> {
                     var blockWithString = getWithString(ctx, "block", ClientBlockPredicateArgumentType.ParseResult.class);
-                    return findBlock(Text.translatable("commands.cfindblock.starting", blockWithString.getLeft()), getBlockPredicate(blockWithString.getRight()));
+                    return findBlock(Text.translatable("commands.cfindblock.starting", blockWithString.getLeft()), getBlockPredicate(blockWithString.getRight(), ctx));
                 })));
     }
 
