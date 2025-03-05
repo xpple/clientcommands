@@ -141,15 +141,10 @@ public class ClientCommands implements ClientModInitializer {
         CTellRawCommand.register(dispatcher, context);
         CTimeCommand.register(dispatcher);
         CTitleCommand.register(dispatcher, context);
-        FindBlockCommand.register(dispatcher, context);
-        FindCommand.register(dispatcher);
-        FindItemCommand.register(dispatcher, context);
         FishCommand.register(dispatcher, context);
         FovCommand.register(dispatcher);
         GammaCommand.register(dispatcher);
         GetDataCommand.register(dispatcher);
-        GhostBlockCommand.register(dispatcher, context);
-        GlowCommand.register(dispatcher);
         HotbarCommand.register(dispatcher);
         KitCommand.register(dispatcher);
         ListenCommand.register(dispatcher);
@@ -166,7 +161,6 @@ public class ClientCommands implements ClientModInitializer {
         RenderCommand.register(dispatcher);
         ReplyCommand.register(dispatcher);
         ShrugCommand.register(dispatcher);
-        SignSearchCommand.register(dispatcher);
         SnakeCommand.register(dispatcher);
         SnapCommand.register(dispatcher);
         StartupCommand.register(dispatcher);
